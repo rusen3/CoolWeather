@@ -121,18 +121,18 @@ public class ChooseAreaFragment extends Fragment {
                     queryCounties();
                 } else if(currentLevel == LEVEL_COUNTY) {
                     String weatherid = countyList.get(position).getWeatherId();
-//                    if(getActivity() instanceof MainActivity) {
-//                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
-//                        intent.putExtra("weather_id", weatherid);
-//                        startActivity(intent);
-//                        getActivity().finish();
-//                    } else if(getActivity() instanceof WeatherActivity) {
-//                        WeatherActivity activity = (WeatherActivity) getActivity();
+                    if(getActivity() instanceof MainActivity) {
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id", weatherid);
+                        startActivity(intent);
+                        getActivity().finish();
+                    } else if(getActivity() instanceof WeatherActivity) {
+                        WeatherActivity activity = (WeatherActivity) getActivity();
 //                        activity.drawerLayout.closeDrawers();
 //                        activity.swipeRefresh.setRefreshing(true);
-//                        activity.requestWeather(weatherId);
-//
-//                    }
+//                        activity.requestWeather(weatherid);
+
+                    }
                 }
             }
         });
@@ -156,7 +156,7 @@ public class ChooseAreaFragment extends Fragment {
         titleText.setText("中国");
         backButton.setVisibility(View.GONE);
         provinceList = LitePal.findAll(Province.class);
-        Log.d("CAF", "queryProvinces" + provinceList.size());
+//        Log.d("CAF", "queryProvinces num: " + provinceList.size());
         if(provinceList.size() > 0) {
             dataList.clear();
             for(Province province: provinceList) {
@@ -213,7 +213,7 @@ public class ChooseAreaFragment extends Fragment {
             int provinceCode = selectedProvince.getProvinceCode();
             int cityCode = selectedCity.getCityCode();
             String address = "http://guolin.tech/api/china/" + provinceCode + "/" + cityCode;
-            queryFromServer(address, "city");
+            queryFromServer(address, "county");
         }
     }
 
@@ -245,7 +245,7 @@ public class ChooseAreaFragment extends Fragment {
                 } else if("county".equals(type)) {
                     result = Utility.handleCountyResponse(responseText, selectedCity.getId());
                 }
-                Log.d("CAF", result + "");
+                Log.d("CAF", type + "   " +  result );
                 if(result) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
