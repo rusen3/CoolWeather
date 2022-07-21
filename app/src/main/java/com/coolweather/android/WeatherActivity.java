@@ -6,6 +6,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -65,6 +66,8 @@ public class WeatherActivity extends AppCompatActivity {
 
     private ImageView bingPicImg;
 
+    private String mWeatherId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,17 +98,17 @@ public class WeatherActivity extends AppCompatActivity {
         // 获取缓存
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = prefs.getString("weather", null);
-        final String weatherId;
+
         if(weatherString != null) {
             // 缓存不为空，直接解析数据
             Weather weather = Utility.handleWeatherResponse(weatherString);
-            weatherId = weather.basic.weatherId;
+            mWeatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
         } else {
             // 缓存为空，去服务器查询天气
-            weatherId = getIntent().getStringExtra("weather_id");
+            mWeatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
-            requestWeather(weatherId);
+            requestWeather(mWeatherId);
         }
         String bingPic = prefs.getString("bing_pic", null);
         if(bingPic != null) {
@@ -117,7 +120,7 @@ public class WeatherActivity extends AppCompatActivity {
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                requestWeather(weatherId);
+                requestWeather(mWeatherId);
             }
         });
         // navButton点击事件，显示滑动菜单
@@ -158,6 +161,7 @@ public class WeatherActivity extends AppCompatActivity {
                             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
                             editor.putString("weather", responseText);
                             editor.apply();
+                            mWeatherId = weather.basic.weatherId;
                             showWeatherInfo(weather);
                         } else {
                             Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
@@ -175,38 +179,44 @@ public class WeatherActivity extends AppCompatActivity {
      * 处理并展示Weather实体类中的数据。
      */
     private void showWeatherInfo(Weather weather) {
-        String cityName = weather.basic.cityName;
-        String updateTime = weather.basic.update.updateTime.split(" ")[1];
-        String degree = weather.now.temperature + "℃";
-        String weatherInfo = weather.now.more.info;
-        titleCity.setText(cityName);
-        titleUpdateTime.setText(updateTime);
-        degreeText.setText(degree);
-        weatherInfoText.setText(weatherInfo);
-        forecastLayout.removeAllViews();
-        for (Forecast forecast : weather.forecastList) {
-            View view = LayoutInflater.from(this).inflate(R.layout.forecast_item, forecastLayout, false);
-            TextView dateText = (TextView) view.findViewById(R.id.date_text);
-            TextView infoText = (TextView) view.findViewById(R.id.info_text);
-            TextView maxText = (TextView) view.findViewById(R.id.max_text);
-            TextView minText = (TextView) view.findViewById(R.id.min_text);
-            dateText.setText(forecast.date);
-            infoText.setText(forecast.more.info);
-            maxText.setText(forecast.temperature.max);
-            minText.setText(forecast.temperature.min);
-            forecastLayout.addView(view);
-        }
-        if (weather.aqi != null) {
-            aqiText.setText(weather.aqi.city.aqi);
-            pm25Text.setText(weather.aqi.city.pm25);
-        }
-        String comfort = "舒适度：" + weather.suggestion.comfort.info;
-        String carWash = "洗车指数：" + weather.suggestion.carWash.info;
-        String sport = "运行建议：" + weather.suggestion.sport.info;
-        comfortText.setText(comfort);
-        carWashText.setText(carWash);
-        sportText.setText(sport);
-        weatherLayout.setVisibility(View.VISIBLE);
+       if (weather != null && "ok".equals(weather.status)) {
+           String cityName = weather.basic.cityName;
+           String updateTime = weather.basic.update.updateTime.split(" ")[1];
+           String degree = weather.now.temperature + "℃";
+           String weatherInfo = weather.now.more.info;
+           titleCity.setText(cityName);
+           titleUpdateTime.setText(updateTime);
+           degreeText.setText(degree);
+           weatherInfoText.setText(weatherInfo);
+           forecastLayout.removeAllViews();
+           for (Forecast forecast : weather.forecastList) {
+               View view = LayoutInflater.from(this).inflate(R.layout.forecast_item, forecastLayout, false);
+               TextView dateText = (TextView) view.findViewById(R.id.date_text);
+               TextView infoText = (TextView) view.findViewById(R.id.info_text);
+               TextView maxText = (TextView) view.findViewById(R.id.max_text);
+               TextView minText = (TextView) view.findViewById(R.id.min_text);
+               dateText.setText(forecast.date);
+               infoText.setText(forecast.more.info);
+               maxText.setText(forecast.temperature.max);
+               minText.setText(forecast.temperature.min);
+               forecastLayout.addView(view);
+           }
+           if (weather.aqi != null) {
+               aqiText.setText(weather.aqi.city.aqi);
+               pm25Text.setText(weather.aqi.city.pm25);
+           }
+           String comfort = "舒适度：" + weather.suggestion.comfort.info;
+           String carWash = "洗车指数：" + weather.suggestion.carWash.info;
+           String sport = "运行建议：" + weather.suggestion.sport.info;
+           comfortText.setText(comfort);
+           carWashText.setText(carWash);
+           sportText.setText(sport);
+           weatherLayout.setVisibility(View.VISIBLE);
+           Intent intent = new Intent(this, AutoCloseable.class);
+           startService(intent);
+       } else {
+           Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+       }
     }
 
     /**
