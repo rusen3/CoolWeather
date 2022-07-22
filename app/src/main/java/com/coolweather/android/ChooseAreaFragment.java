@@ -131,7 +131,6 @@ public class ChooseAreaFragment extends Fragment {
                         activity.drawerLayout.closeDrawers();
                         activity.swipeRefresh.setRefreshing(true);
                         activity.requestWeather(weatherId);
-
                     }
                 }
             }
@@ -153,11 +152,14 @@ public class ChooseAreaFragment extends Fragment {
      * 查询省份数据
      */
     private void queryProvinces() {
+        // 设置标题为中国
         titleText.setText("中国");
+        // 设置返回按钮不可见
         backButton.setVisibility(View.GONE);
+        // 通过LitePal查询Province数据
         provinceList = LitePal.findAll(Province.class);
-//        Log.d("CAF", "queryProvinces num: " + provinceList.size());
         if(provinceList.size() > 0) {
+            // 如果数据库有数据，则更新dataList 和 listView
             dataList.clear();
             for(Province province: provinceList) {
                 dataList.add(province.getProvinceName());
@@ -166,6 +168,7 @@ public class ChooseAreaFragment extends Fragment {
             listView.setSelection(0);
             currentLevel = LEVEL_PROVINCE;
         } else {
+            // 如果数据库没有数据，则发起网络请求获取数据
             String address = "http://guolin.tech/api/china";
             queryFromServer(address, "province");
         }
@@ -175,11 +178,14 @@ public class ChooseAreaFragment extends Fragment {
      * 查询选中省内所有的市，优先从数据库查询，如果没有查询到再去服务器上查询。
      */
     private void queryCities() {
+        // 设置标题为选中的省份
         titleText.setText(selectedProvince.getProvinceName());
+        // 设置返回按钮可见
         backButton.setVisibility(View.VISIBLE);
+        // 使用LitePal查询City数据
         cityList = LitePal.where("provinceid = ?", String.valueOf(selectedProvince.getId())).find(City.class);
-        Log.d("CAF", "queryCities" + cityList.size());
         if (cityList.size() > 0) {
+            // 如果数据库中有数据，更新dataList 和 listView
             dataList.clear();
             for (City city : cityList) {
                 dataList.add(city.getCityName());
@@ -188,6 +194,7 @@ public class ChooseAreaFragment extends Fragment {
             listView.setSelection(0);
             currentLevel = LEVEL_CITY;
         } else {
+            // 如果数据库中没有数据，则发起网络请求获取数据
             int provinceCode = selectedProvince.getProvinceCode();
             String address = "http://guolin.tech/api/china/" + provinceCode;
             queryFromServer(address, "city");
@@ -236,8 +243,10 @@ public class ChooseAreaFragment extends Fragment {
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                // 获取返回的JSON字符串
                 String responseText = response.body().string();
                 boolean result = false;
+                // 根据type，调用不同的JSON解析方法
                 if("province".equals(type)) {
                     result = Utility.handleProvinceResponse(responseText);
                 } else if("city".equals(type)) {

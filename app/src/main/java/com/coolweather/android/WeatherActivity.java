@@ -24,6 +24,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.coolweather.android.gson.Forecast;
 import com.coolweather.android.gson.Weather;
+import com.coolweather.android.service.AutoUpdateService;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
 
@@ -36,13 +37,13 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
-    public SwipeRefreshLayout swipeRefresh;
-
     public DrawerLayout drawerLayout;
 
-    private ScrollView weatherLayout;
-
     private Button navButton;
+
+    public SwipeRefreshLayout swipeRefresh;
+
+    private ScrollView weatherLayout;
 
     private TextView titleCity;
 
@@ -79,10 +80,10 @@ public class WeatherActivity extends AppCompatActivity {
         }
         setContentView(R.layout.activity_weather);
         // 初始化各控件
-        swipeRefresh = findViewById(R.id.swipe_refresh);
-        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
         drawerLayout = findViewById(R.id.drawer_layout);
         navButton = (Button) findViewById(R.id.nav_button);
+        swipeRefresh = findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
         weatherLayout = (ScrollView) findViewById(R.id.weather_layout);
         titleCity = (TextView) findViewById(R.id.title_city);
         titleUpdateTime = (TextView) findViewById(R.id.title_update_time);
@@ -95,28 +96,31 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText = (TextView) findViewById(R.id.car_wash_text);
         sportText = (TextView) findViewById(R.id.sport_text);
         bingPicImg = (ImageView) findViewById(R.id.bing_pic_img);
-        // 获取缓存
+        // 获取缓存 prefs
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        // 通过缓存prefs获取weather
         String weatherString = prefs.getString("weather", null);
-
         if(weatherString != null) {
-            // 缓存不为空，直接解析数据
+            // 缓存weather不为空，直接解析数据
             Weather weather = Utility.handleWeatherResponse(weatherString);
             mWeatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
         } else {
-            // 缓存为空，去服务器查询天气
+            // 缓存weather为空，去服务器查询天气
             mWeatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(mWeatherId);
         }
+        // 通过缓存prefs获取bing_pic
         String bingPic = prefs.getString("bing_pic", null);
         if(bingPic != null) {
+            // 缓存bing_pic不为空，通过Glide直接加载
             Glide.with(this).load(bingPic).into(bingPicImg);
         } else {
+            // 缓存bing_pic为空，去服务器查询图片
             loadBingPic();
         }
-        // 刷新
+        // 刷新事件
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -212,7 +216,7 @@ public class WeatherActivity extends AppCompatActivity {
            carWashText.setText(carWash);
            sportText.setText(sport);
            weatherLayout.setVisibility(View.VISIBLE);
-           Intent intent = new Intent(this, AutoCloseable.class);
+           Intent intent = new Intent(this, AutoUpdateService.class);
            startService(intent);
        } else {
            Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();

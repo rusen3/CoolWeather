@@ -89,4 +89,5 @@ public class AutoUpdateService extends Service {
             }
         });
     }
+
 }
